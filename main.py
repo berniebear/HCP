@@ -13,11 +13,10 @@ def main():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--kfold', default=10, type=int, help='kfold')
     parser.add_argument('--lr', default=0.000005, type=float, help='learning rate') # 0.000001
-    parser.add_argument('--dropout', default=0.1, type=float, help='dropout rate')
     parser.add_argument('--bs', default=16, type=int, help='batch size')
     parser.add_argument('--epoch', default=50, type=int, help='batch size')
     parser.add_argument('--loss', default='mse', type=str, help='loss')
-    parser.add_argument('--leaky', action='store_true')
+    parser.add_argument('--leaky', action='store_true', help='use leaky relu')
     parser.add_argument('--layers', default=2, type=int, help='layers')
     parser.add_argument('--model_name', default='model0', type=str, help='model_name')
     parser.add_argument('--hidden', default=128, type=int, help='hidden size')
@@ -25,9 +24,11 @@ def main():
 
     writer = SummaryWriter('runs/'+args.model_name)
     model_dir = os.path.join('models/', args.model_name)
-
+    log_dir = os.path.join('log', args.model_name)
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
     
     # test_data
     data = np.load('data/subjects.npy')
@@ -46,7 +47,7 @@ def main():
 
             # Model
             print('==> Building model..')
-            net = Net(n_feature=data.shape[-1], n_hidden=args.hidden, n_output=1, layers=args.layers, dropout=args.dropout, leaky=args.leaky).cuda() # 16 # 128 seems to be good
+            net = Net(n_feature=data.shape[-1], n_hidden=args.hidden, n_output=1, layers=args.layers, leaky=args.leaky).cuda() # 16 # 128 seems to be good
             net.apply(init_weights)
             if args.loss == 'mse':
                 criterion = nn.MSELoss() #SmoothL1Loss() # L1Loss()
@@ -75,8 +76,8 @@ def main():
                        data_time, batch_time))
                 if test_pcorr > best_pcorr:
                     best_pcorr = test_pcorr
-                    torch.save(net.state_dict(), os.path.join(model_dir,'ckpt_best.t7') 
-            with open('./log/' + args.model_name + '_' + str(q) + '_' + str(k)+'.txt', 'w') as fp:
+                    torch.save(net.state_dict(), os.path.join(model_dir,'ckpt_best.t7'))
+            with open(log_dir + '/' + args.model_name + '_' + str(q) + '_' + str(k)+'.txt', 'w') as fp:
                 fp.write(str(best_pcorr)+'\n')
         
 

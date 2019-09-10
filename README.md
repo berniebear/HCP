@@ -19,9 +19,11 @@ The performance log file is stored at ./logs/[model_name]. We provide a script t
     python log/show.py [model_name]
     
 # Performance
-l1_hh128_relu_b16_lr1e5
-Pearson Corr
-|ID |Mean|STD|Max|Min|
+Model Name:l1_hh128_relu_b16_lr1e5
+Metric: Pearson Corr
+
+
+|ID|Mean|STD|Max|Min|
 |---|---|---|---|---|
 0|0.2906|0.0626|0.4469|0.2282
 1|0.1591|0.0846|0.2881|0.0214

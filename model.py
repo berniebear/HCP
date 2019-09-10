@@ -9,14 +9,13 @@ def init_weights(m):
         m.bias.data.fill_(0.00)
 
 class Net(torch.nn.Module):
-    def __init__(self, n_feature, n_hidden, n_output, layers=2, dropout=0.5, leaky=True):
+    def __init__(self, n_feature, n_hidden, n_output, layers=2, leaky=True):
         super(Net, self).__init__()
         self.layers = layers
         self.hidden1 = torch.nn.Linear(n_feature, n_hidden)
         self.hidden2 = torch.nn.Linear(n_hidden, n_hidden)
         self.hidden3 = torch.nn.Linear(n_hidden, n_hidden)
         self.predict = torch.nn.Linear(n_hidden, n_output)
-        self.dropout = nn.Dropout(dropout)
         if leaky == True:
             self.act = torch.nn.ReLU()
         else:
