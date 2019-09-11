@@ -1,6 +1,8 @@
 # Local connectome fingerprints of HCP 1062 subjects for prediction
 
-We provide a simple model for training/testing the NEO-FFI Prediction Task using PyTorch. For each question, 10-fold cross-valdation will takes 2.5min with batchsize 16 to train and test on a GTX 1080 Ti GPU machine. The cross-validation time For 60 quesitons is around 2.5 hours. Data is available at [here](http://dsi-studio.labsolver.org/download-images/local-connectome-fingerprints-of-hcp-1062-subjects-for-neofac-prediction). Please contact [Fang-Cheng Yeh](mailto:frank.yeh@gmail.com) or [Po-Yao Huang](mailto:poyaoh@cs.cmu.edu) if you have any questions. 
+We provide a simple model for training/testing the NEO-FFI Prediction Task using PyTorch. For each question, 10-fold cross-valdation will takes 2.5min with batchsize 16 to train and test on a GTX 1080 Ti GPU machine. The cross-validation time For 60 quesitons is around 2.5 hours. Data is available at [here](http://dsi-studio.labsolver.org/download-images/local-connectome-fingerprints-of-hcp-1062-subjects-for-neofac-prediction). Please contact [Fang-Cheng Yeh](mailto:frank.yeh@gmail.com) or [Po-Yao Huang](mailto:poyaoh@cs.cmu.edu) if you have any questions.     
+
+You are encourage to develop more advanced model to improve the regression perfromance on diffusion MRI. You may start with modifying model.py or customize the loss function. Any PR is more than welcome.    
 
 # Usage
     python main.py [-h] [--kfold KFOLD] [--lr LR] [--bs BS] [--epoch EPOCH] [--loss LOSS] [--leaky] [--layers LAYERS] [--model_name MODEL_NAME] [--hidden HIDDEN]
