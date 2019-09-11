@@ -18,6 +18,7 @@ def main():
     parser.add_argument('--loss', default='mse', type=str, help='loss')
     parser.add_argument('--leaky', action='store_true', help='use leaky relu')
     parser.add_argument('--layers', default=2, type=int, help='layers')
+    parser.add_argument('--step', default=40, type=int, help='layers')
     parser.add_argument('--model_name', default='model0', type=str, help='model_name')
     parser.add_argument('--hidden', default=128, type=int, help='hidden size')
     args = parser.parse_args()
@@ -56,14 +57,14 @@ def main():
             elif args.loss == 'sl1':
                 criterion = nn.SmoothL1Loss() # L1Loss()
             optimizer = torch.optim.SGD(net.parameters(), lr=args.lr, momentum=0.995, weight_decay=5e-4) #5e-4) # 0.99 0
-            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=40, gamma=0.1)
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.step, gamma=0.1)
 
             best_pcorr = 0.  # best test accuracy
             for epoch in range(args.epoch):
                 # traniner
                 tr_loss, tr_pcorr, data_time, batch_time = train(net, tr_loader, optimizer, criterion)
                 scheduler.step() # shrink lr as 1/10 every 40 epoch
-                # validation/testomg
+                # validation/testing (report only the best val_pcorr as the test_pcorr)
                 test_loss, test_pcorr = validation(net, test_loader, criterion)
                 # log with tensorboard
                 writer.add_scalar('test_loss {}-{}'.format(q, k), test_loss, epoch)
