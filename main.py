@@ -66,10 +66,10 @@ def main():
                 # validation/testomg
                 test_loss, test_pcorr = validation(net, test_loader, criterion)
                 # log with tensorboard
-                writer.add_scalar('test_loss', test_loss, epoch)
-                writer.add_scalar('test_pcorr', test_pcorr, epoch)
-                writer.add_scalar('train_loss', tr_loss, epoch)
-                writer.add_scalar('train_pcorr', tr_pcorr, epoch)
+                writer.add_scalar('test_loss {}-{}'.format(q, k), test_loss, epoch)
+                writer.add_scalar('test_pcorr {}-{}'.format(q, k), test_pcorr, epoch)
+                writer.add_scalar('train_loss {}-{}'.format(q, k), tr_loss, epoch)
+                writer.add_scalar('train_pcorr {}-{}'.format(q,k), tr_pcorr, epoch)
                 print('Qid-fold:{}/{}, Epoch {}, tr_loss:{:.4f}, tr_pcorr:{:.4f}, val_loss:{:.4f}, val_pcorr:{:.4f}, best_pcorr:{:.4f}, data_time:{:.4f}, batch_time:{:.4f}'.format(
                        q, k, 
                        epoch, tr_loss, tr_pcorr, test_loss, test_pcorr, best_pcorr, 
