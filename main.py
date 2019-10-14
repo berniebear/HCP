@@ -1,10 +1,10 @@
 import torch
 from torch.utils.data.dataset import Dataset
 import os, argparse, json, time
+from torch.autograd import Variable
 import numpy as np
 from utils import *
 from model import *
-#from dataset import dataset
 from tensorboardX import SummaryWriter 
 from scipy.stats import pearsonr
 torch.manual_seed(1) 
@@ -19,7 +19,7 @@ def main():
     parser.add_argument('--leaky', action='store_true', help='use leaky relu')
     parser.add_argument('--layers', default=2, type=int, help='layers')
     parser.add_argument('--step', default=40, type=int, help='layers')
-    parser.add_argument('--model_name', default='model0', type=str, help='model_name')
+    parser.add_argument('--model_name', default='l1_hh128_lkrelu_b16_lr5e6', type=str, help='model_name')
     parser.add_argument('--hidden', default=128, type=int, help='hidden size')
     args = parser.parse_args()
 
@@ -39,10 +39,15 @@ def main():
     for q in range(60):
         for k in range(args.kfold):
             train_lst, test_lst = splits[k]
-            #tr_data = dataset(data[train_lst], np.expand_dims(labels[train_lst, q], axis=1))
+            idx1, idx2 = get_kfold(train_lst, k=args.kfold)[0]
+            validation_lst = train_lst[idx2]
+            train_lst = train_lst[idx1]
             tr_data=torch.utils.data.TensorDataset(torch.FloatTensor(data[train_lst]).cuda(), torch.FloatTensor(np.expand_dims(labels[train_lst, q], axis=1)).cuda())
             tr_loader = torch.utils.data.DataLoader(tr_data, batch_size=args.bs, shuffle=True, num_workers=0, pin_memory=False)
-            #test_data = dataset(data[test_lst], np.expand_dims(labels[test_lst, q], axis=1))
+
+            vali_data = torch.utils.data.TensorDataset(torch.FloatTensor(data[validation_lst]).cuda(), torch.FloatTensor(np.expand_dims(labels[validation_lst, q], axis=1)).cuda())
+            vali_loader = torch.utils.data.DataLoader(vali_data, batch_size=args.bs, shuffle=False, num_workers=0, pin_memory=False)
+
             test_data=torch.utils.data.TensorDataset(torch.FloatTensor(data[test_lst]).cuda(), torch.FloatTensor(np.expand_dims(labels[test_lst, q], axis=1)).cuda())
             test_loader = torch.utils.data.DataLoader(test_data, batch_size=args.bs, shuffle=False, num_workers=0, pin_memory=False)
 
@@ -65,18 +70,19 @@ def main():
                 tr_loss, tr_pcorr, data_time, batch_time = train(net, tr_loader, optimizer, criterion)
                 scheduler.step() # shrink lr as 1/10 every 40 epoch
                 # validation/testing (report only the best val_pcorr as the test_pcorr)
+                vali_loss, vali_pcorr = validation(net, vali_loader, criterion)
                 test_loss, test_pcorr = validation(net, test_loader, criterion)
                 # log with tensorboard
-                writer.add_scalar('test_loss {}-{}'.format(q, k), test_loss, epoch)
-                writer.add_scalar('test_pcorr {}-{}'.format(q, k), test_pcorr, epoch)
+                writer.add_scalar('vali_loss {}-{}'.format(q, k), vali_loss, epoch)
+                writer.add_scalar('vali_pcorr {}-{}'.format(q, k), vali_pcorr, epoch)
                 writer.add_scalar('train_loss {}-{}'.format(q, k), tr_loss, epoch)
                 writer.add_scalar('train_pcorr {}-{}'.format(q,k), tr_pcorr, epoch)
-                print('Qid-fold:{}/{}, Epoch {}, tr_loss:{:.4f}, tr_pcorr:{:.4f}, val_loss:{:.4f}, val_pcorr:{:.4f}, best_pcorr:{:.4f}, data_time:{:.4f}, batch_time:{:.4f}'.format(
+                print('Qid-fold:{}/{}, Epoch {}, tr_loss:{:.4f}, tr_pcorr:{:.4f}, val_loss:{:.4f}, val_pcorr:{:.4f}, best_pcorr:{:.4f}, test_pcorr:{:.4f}, data_time:{:.4f}, batch_time:{:.4f}'.format(
                        q, k, 
-                       epoch, tr_loss, tr_pcorr, test_loss, test_pcorr, best_pcorr, 
+                       epoch, tr_loss, tr_pcorr, vali_loss, vali_pcorr, best_pcorr, test_pcorr,
                        data_time, batch_time))
-                if test_pcorr > best_pcorr:
-                    best_pcorr = test_pcorr
+                if vali_pcorr > best_pcorr:
+                    best_pcorr = vali_pcorr
                     torch.save(net.state_dict(), os.path.join(model_dir,'ckpt_best.t7'))
             with open(log_dir + '/' + args.model_name + '_' + str(q) + '_' + str(k)+'.txt', 'w') as fp:
                 fp.write(str(best_pcorr)+'\n')
@@ -115,20 +121,22 @@ def train(model, loader, optimizer, criterion):
 
 def validation(model, loader, criterion):
     model.eval()
-    with torch.no_grad():
-        loss_agg = []
-        ys_ = []
-        ys = []
-        for batch_idx, (x, y) in enumerate(loader):
-            y_ = model(x.cuda())
-            loss = criterion(y.cuda(), y_)
-            loss_agg.append(loss.item())
-            ys_.extend(y_.cpu().tolist())
-            ys.extend(y.cpu().tolist())
+    #with torch.no_grad():
+    loss_agg = []
+    ys_ = []
+    ys = []
+    for batch_idx, (x, y) in enumerate(loader):
+        y_ = model(x.cuda())
+        loss = criterion(y.cuda(), y_)
+        loss_agg.append(loss.item())
+        ys_.extend(y_.cpu().tolist())
+        ys.extend(y.cpu().tolist())
+        # saliency
     ys = np.array(ys).squeeze()
     ys_ = np.array(ys_).squeeze()
     corr, _ = pearsonr(ys, ys_)
     return sum(loss_agg)/len(loss_agg), corr 
+
 
 if __name__ == '__main__':
     main()
