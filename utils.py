@@ -1,4 +1,4 @@
-import sys, time, math
+import os, sys, time, math
 import numpy as np
 import torch
 import torch.nn as nn
@@ -71,7 +71,8 @@ def init_params(net):
                 init.constant(m.bias, 0)
 
 
-term_width = 80
+_, term_width = os.popen('stty size', 'r').read().split()
+term_width = int(term_width)
 
 TOTAL_BAR_LENGTH = 65.
 last_time = time.time()
